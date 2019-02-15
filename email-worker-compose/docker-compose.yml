@@ -1,0 +1,29 @@
+version: '3'
+volumes:
+  dados:
+services:
+  db:
+    image: postgres:9.6
+    volumes:
+      # Mapeando o volume de dados: pasta externa `dados` para /var/lib/postgresql/data
+      - dados:/var/lib/postgresql/data
+      # Mapeando o volume de scripts: pasta externa `scripts` para /scripts
+      - ./scripts:/scripts
+      # Mapeia o script de inicializaçao do banco de dados para o arquivo interno do container
+      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
+  frontend: 
+    image: nginx:1.13
+    volumes: 
+      # Mapeando volume do site
+      - ./web:/usr/share/nginx/html/
+    ports:
+      - 80:80
+  app:
+    image: python:3.6
+    volumes:
+      # Mapeia volume da aplicação
+      - ./app:/app
+    working_dir: /app
+    command: bash ./app.sh
+    ports:
+      - 8080:8080
