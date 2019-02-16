@@ -1,29 +1,62 @@
 version: '3'
 volumes:
   dados:
+networks:
+  banco:
+  web:
+  fila:
 services:
   db:
     image: postgres:9.6
     volumes:
-      # Mapeando o volume de dados: pasta externa `dados` para /var/lib/postgresql/data
+      # Volume dos dados
       - dados:/var/lib/postgresql/data
-      # Mapeando o volume de scripts: pasta externa `scripts` para /scripts
+      # Scripts
       - ./scripts:/scripts
-      # Mapeia o script de inicializaçao do banco de dados para o arquivo interno do container
       - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql
-  frontend: 
+    networks:
+      - banco
+  frontend:
     image: nginx:1.13
-    volumes: 
-      # Mapeando volume do site
+    volumes:
+      # Site
       - ./web:/usr/share/nginx/html/
+      # Configuração do proxy reverso
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
     ports:
       - 80:80
+    networks:
+      - web
+    depends_on:
+      - app
   app:
     image: python:3.6
     volumes:
-      # Mapeia volume da aplicação
+      # Aplicação
       - ./app:/app
     working_dir: /app
     command: bash ./app.sh
-    ports:
-      - 8080:8080
+    networks:
+      - banco
+      - web
+      - fila
+    depends_on:
+      - db
+      - queue
+    environment:
+      - DB_NAME=email_sender
+  queue:
+    image: redis:3.2
+    networks:
+      - fila
+  worker:
+    build: worker
+    volumes:
+      # Worker
+      - ./worker:/worker
+    working_dir: /worker
+    command: worker.py
+    networks:
+      - fila
+    depends_on:
+      - queue
