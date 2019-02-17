@@ -44,7 +44,7 @@ services:
       - db
       - queue
     environment:
-      - DB_NAME=email_sender
+      - DB_NAME=abc_sender # aqui está sendo sobrescrito pelo arquivo override.
   queue:
     image: redis:3.2
     networks:
