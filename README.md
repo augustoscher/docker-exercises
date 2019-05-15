@@ -1,2 +1,2 @@
-# curso-docker
+# Some docker and docker-compose examples
 
